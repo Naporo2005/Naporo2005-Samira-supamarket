@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glow Market — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum:#3B1F2E;
+    --ivory:#FAF5F0;
+    --blush:#E8C4C4;
+    --gold:#C9A227;
+    --charcoal:#2B2024;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--ivory); color:var(--charcoal); font-family:'Inter',sans-serif; }
+  header{ background:var(--plum); color:var(--ivory); padding:22px 20px; display:flex; justify-content:space-between; align-items:center;}
+  header h1{ font-family:'Fraunces',serif; font-size:1.4rem; font-weight:600;}
+  #logout-btn{ background:none; border:1px solid var(--blush); color:var(--ivory); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:0.85rem;}
+
+  /* Login screen */
+  #login-screen{
+    max-width:360px;
+    margin:80px auto;
+    padding:32px 28px;
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 4px 20px rgba(59,31,46,0.1);
+  }
+  #login-screen h2{ font-family:'Fraunces',serif; font-size:1.5rem; margin-bottom:20px; text-align:center;}
+  #login-screen input{
+    width:100%; padding:11px 14px; margin-bottom:12px;
+    border:1px solid #ddd; border-radius:8px; font-size:0.9rem; font-family:'Inter',sans-serif;
+  }
+  #login-screen button{
+    width:100%; background:var(--plum); color:var(--ivory); border:none; padding:12px;
+    border-radius:8px; font-weight:600; cursor:pointer; margin-top:6px;
+  }
+  #login-error{ color:#b04747; font-size:0.82rem; margin-top:8px; text-align:center; display:none;}
+
+  main{ max-width:900px; margin:0 auto; padding:24px 20px 60px; display:none;}
+  section{ background:#fff; border-radius:14px; padding:22px 20px; margin-bottom:20px; box-shadow:0 2px 10px rgba(59,31,46,0.06);}
+  section h2{ font-family:'Fraunces',serif; font-size:1.2rem; margin-bottom:16px; color:var(--plum);}
+
+  .form-row{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px;}
+  .form-row input, .form-row select{
+    flex:1; min-width:140px; padding:10px 12px; border:1px solid #ddd; border-radius:8px;
+    font-size:0.88rem; font-family:'Inter',sans-serif;
+  }
+  input[type="file"]{ flex:1; min-width:180px; font-size:0.85rem;}
+  .btn-primary{
+    background:var(--plum); color:var(--ivory); border:none; padding:11px 20px;
+    border-radius:8px; font-weight:600; cursor:pointer; font-size:0.9rem;
+  }
+  .btn-primary:disabled{ background:#aaa; cursor:not-allowed;}
+
+  #product-list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px;}
+  .p-card{ border:1px solid #eee; border-radius:12px; overflow:hidden; display:flex; flex-direction:column;}
+  .p-card img{ width:100%; aspect-ratio:1/1; object-fit:cover; background:var(--blush);}
+  .p-card-body{ padding:12px; display:flex; flex-direction:column; gap:5px;}
+  .p-card-name{ font-weight:600; font-size:0.92rem;}
+  .p-card-meta{ font-size:0.78rem; color:#8a7580;}
+  .p-card-price{ color:var(--gold); font-weight:700; font-family:'Fraunces',serif;}
+  .p-card-actions{ display:flex; gap:8px; margin-top:6px;}
+  .p-card-actions button{
+    flex:1; padding:7px; border-radius:6px; border:none; font-size:0.78rem; cursor:pointer; font-weight:600;
+  }
+  .edit-btn{ background:var(--blush); color:var(--charcoal);}
+  .delete-btn{ background:#b04747; color:#fff;}
+
+  #status-msg{ font-size:0.85rem; margin-top:10px; }
+  #status-msg.success{ color:#2a7a4a;}
+  #status-msg.error{ color:#b04747;}
+  #empty-products{ color:#8a7580; font-size:0.9rem;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h2>Admin Login</h2>
+  <input type="email" id="login-email" placeholder="Email" autocomplete="username">
+  <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+  <button onclick="login()">Log In</button>
+  <div id="login-error">Invalid email or password.</div>
+</div>
+
+<header id="app-header" style="display:none;">
+  <h1>Glow Market — Admin</h1>
+  <button id="logout-btn" onclick="logout()">Log Out</button>
+</header>
+
+<main id="app-main">
+
+  <section>
+    <h2>Store Settings</h2>
+    <div class="form-row">
+      <input type="text" id="whatsapp-input" placeholder="WhatsApp number, e.g. 233551234567">
+      <button class="btn-primary" onclick="saveWhatsapp()">Save Number</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Add Product</h2>
+    <div class="form-row">
+      <input type="text" id="new-name" placeholder="Product name">
+      <input type="number" id="new-price" placeholder="Price (GHS)" step="0.01" min="0">
+      <input type="text" id="new-category" placeholder="Category (e.g. Skincare)" list="category-list">
+      <datalist id="category-list"></datalist>
+    </div>
+    <div class="form-row">
+      <input type="file" id="new-image" accept="image/*">
+      <button class="btn-primary" id="add-btn" onclick="addProduct()">Add Product</button>
+    </div>
+    <div id="status-msg"></div>
+  </section>
+
+  <section>
+    <h2>Products</h2>
+    <div id="product-list"></div>
+    <div id="empty-products" style="display:none;">No products yet. Add your first one above.</div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://dnpiidmpsrlsunedykws.supabase.co";
+  const SUPABASE_KEY = "sb_publishable__u7IojxuZGSPgl7K7a7Vug_rxIlUIn9";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let allProducts = [];
+
+  async function checkSession(){
+    const { data } = await sb.auth.getSession();
+    if(data.session){ showApp(); } else { showLogin(); }
+  }
+
+  function showLogin(){
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('app-header').style.display = 'none';
+    document.getElementById('app-main').style.display = 'none';
+  }
+
+  function showApp(){
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-header').style.display = 'flex';
+    document.getElementById('app-main').style.display = 'block';
+    loadSettings();
+    loadProducts();
+  }
+
+  async function login(){
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      document.getElementById('login-error').style.display = 'block';
+    } else {
+      document.getElementById('login-error').style.display = 'none';
+      showApp();
+    }
+  }
+
+  async function logout(){
+    await sb.auth.signOut();
+    showLogin();
+  }
+
+  async function loadSettings(){
+    const { data } = await sb.from('store_settings').select('whatsapp_number').eq('id', 1).single();
+    if(data) document.getElementById('whatsapp-input').value = data.whatsapp_number || "";
+  }
+
+  async function saveWhatsapp(){
+    const number = document.getElementById('whatsapp-input').value.trim();
+    const { error } = await sb.from('store_settings').update({ whatsapp_number: number }).eq('id', 1);
+    setStatus(error ? "Couldn't save number." : "WhatsApp number saved.", !error);
+  }
+
+  async function loadProducts(){
+    const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
+    if(!error) allProducts = data || [];
+    renderProducts();
+    updateCategoryList();
+  }
+
+  function updateCategoryList(){
+    const cats = [...new Set(allProducts.map(p => p.category))];
+    document.getElementById('category-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+  }
+
+  function setStatus(msg, success){
+    const el = document.getElementById('status-msg');
+    el.textContent = msg;
+    el.className = success ? 'success' : 'error';
+    setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  async function addProduct(){
+    const name = document.getElementById('new-name').value.trim();
+    const price = parseFloat(document.getElementById('new-price').value);
+    const category = document.getElementById('new-category').value.trim();
+    const fileInput = document.getElementById('new-image');
+    const file = fileInput.files[0];
+
+    if(!name || isNaN(price) || !category){
+      setStatus("Fill in name, price, and category.", false);
+      return;
+    }
+
+    const addBtn = document.getElementById('add-btn');
+    addBtn.disabled = true;
+    addBtn.textContent = "Adding...";
+
+    let image_url = null;
+    if(file){
+      const filePath = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+      const { error: uploadError } = await sb.storage.from('product-images').upload(filePath, file);
+      if(uploadError){
+        setStatus("Image upload failed: " + uploadError.message, false);
+        addBtn.disabled = false;
+        addBtn.textContent = "Add Product";
+        return;
+      }
+      const { data: urlData } = sb.storage.from('product-images').getPublicUrl(filePath);
+      image_url = urlData.publicUrl;
+    }
+
+    const { error } = await sb.from('products').insert({ name, price, category, image_url });
+    addBtn.disabled = false;
+    addBtn.textContent = "Add Product";
+
+    if(error){
+      setStatus("Couldn't add product: " + error.message, false);
+      return;
+    }
+
+    document.getElementById('new-name').value = '';
+    document.getElementById('new-price').value = '';
+    document.getElementById('new-category').value = '';
+    fileInput.value = '';
+    setStatus("Product added.", true);
+    loadProducts();
+  }
+
+  function renderProducts(){
+    const wrap = document.getElementById('product-list');
+    const emptyEl = document.getElementById('empty-products');
+
+    if(allProducts.length === 0){
+      wrap.innerHTML = '';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    wrap.innerHTML = allProducts.map(p => `
+      <div class="p-card">
+        ${p.image_url ? `<img src="${p.image_url}" alt="${escapeHtml(p.name)}">` : `<div style="aspect-ratio:1/1; background:var(--blush);"></div>`}
+        <div class="p-card-body">
+          <div class="p-card-name">${escapeHtml(p.name)}</div>
+          <div class="p-card-meta">${escapeHtml(p.category)}</div>
+          <div class="p-card-price">GHS ${Number(p.price).toFixed(2)}</div>
+          <div class="p-card-actions">
+            <button class="edit-btn" onclick="editProduct('${p.id}')">Edit</button>
+            <button class="delete-btn" onclick="deleteProduct('${p.id}', '${p.image_url || ''}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function editProduct(id){
+    const product = allProducts.find(p => p.id === id);
+    if(!product) return;
+
+    const newName = prompt("Product name:", product.name);
+    if(newName === null) return;
+    const newPriceStr = prompt("Price (GHS):", product.price);
+    if(newPriceStr === null) return;
+    const newCategory = prompt("Category:", product.category);
+    if(newCategory === null) return;
+
+    const newPrice = parseFloat(newPriceStr);
+    if(!newName.trim() || isNaN(newPrice) || !newCategory.trim()){
+      alert("Invalid input.");
+      return;
+    }
+
+    const { error } = await sb.from('products').update({
+      name: newName.trim(), price: newPrice, category: newCategory.trim()
+    }).eq('id', id);
+
+    if(error){ alert("Couldn't update product: " + error.message); return; }
+    loadProducts();
+  }
+
+  async function deleteProduct(id, image_url){
+    if(!confirm("Delete this product? This can't be undone.")) return;
+
+    if(image_url){
+      const path = image_url.split('/product-images/')[1];
+      if(path) await sb.storage.from('product-images').remove([path]);
+    }
+
+    const { error } = await sb.from('products').delete().eq('id', id);
+    if(error){ alert("Couldn't delete product: " + error.message); return; }
+    loadProducts();
+  }
+
+  checkSession();
+</script>
+</body>
+</html>
